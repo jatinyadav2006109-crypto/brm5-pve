@@ -2,7 +2,7 @@
 if typeof(clear) == "function" then clear() end
 
 local MAIN_VERSION = "1.0"
-local GITHUB_BASE = "https://raw.githubusercontent.com/YOUR_USERNAME/YOUR_REPO/main/brm5-pve/modules/"
+local GITHUB_BASE = "https://raw.githubusercontent.com/jatinyadav2006109-crypto/brm5-pve/main/brm5-pve/modules/"
 local CACHE_BUSTER = MAIN_VERSION .. "-" .. tostring(os.time())
 
 local function loadModule(name)
