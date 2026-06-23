@@ -1,4 +1,7 @@
--- Fire HUB PvE Main (BRM5 Ronograd)
+-- Fire HUB PvE – simplified BRM5 Ronograd
+-- Uses Dexter's modules: npc_manager, silent (hitbox aim), walls (ESP)
+-- Removes non-working features: fullbright, no recoil, color pickers, etc.
+
 if typeof(clear) == "function" then clear() end
 
 local MAIN_VERSION = "1.0"
@@ -21,17 +24,13 @@ end
 local Services = loadModule("services")
 local Config = loadModule("config")
 local NPCManager = loadModule("npc_manager")
-local HitboxAim = loadModule("silent")    -- contains aimbot + hitbox expander
-local ESP = loadModule("walls")           -- ESP markers
-local Lighting = loadModule("fullbright")
-local Weapons = loadModule("norecoil")
+local HitboxAim = loadModule("silent")    -- hitbox expander + aimbot
+local ESP = loadModule("walls")           -- ESP boxes & tracers
 local GUI = loadModule("gui")
 
 Config:load()
-Lighting:storeOriginalSettings(Services.Lighting)
 
 local runtimeConnections = {}
-
 local function saveConfig() Config:save() end
 
 local function syncMouseState()
@@ -61,7 +60,7 @@ local function disconnectRuntime()
     runtimeConnections = {}
 end
 
--- Callbacks from the GUI
+-- Only the callbacks we actually use (all others are removed)
 local callbacks = {
     onAimToggle = function(enabled)
         Config.aimEnabled = enabled
@@ -100,27 +99,13 @@ local callbacks = {
         if not enabled then ESP.cleanup() end
         saveConfig()
     end,
-    onBoxToggle = function(enabled) Config.showBox = enabled; ESP.refreshAll(NPCManager, Config) end,
-    onTracerToggle = function(enabled) Config.showTracer = enabled; ESP.refreshAll(NPCManager, Config) end,
-    onNameToggle = function(enabled) Config.showName = enabled; ESP.refreshAll(NPCManager, Config) end,
-    onDistanceToggle = function(enabled) Config.showDistance = enabled; ESP.refreshAll(NPCManager, Config) end,
-    onHealthToggle = function(enabled) Config.showHealth = enabled; ESP.refreshAll(NPCManager, Config) end,
-    onESPWallCheckToggle = function(enabled) Config.espWallCheck = enabled; ESP.refreshAll(NPCManager, Config) end,
-    onShowInvisibleToggle = function(enabled) Config.showInvisible = enabled; ESP.refreshAll(NPCManager, Config) end,
-    onFullBrightToggle = function(enabled)
-        Config.fullBrightEnabled = enabled
-        if not enabled then Lighting:restoreOriginal(Services.Lighting) end
-        saveConfig()
+    onBoxToggle = function(enabled)
+        Config.showBox = enabled
+        ESP.refreshAll(NPCManager, Config)
     end,
-    onNoRecoilToggle = function(enabled)
-        Config.patchOptions.recoil = enabled
-        Weapons.patchWeapons(Services.ReplicatedStorage, Config.patchOptions)
-        saveConfig()
-    end,
-    onFiremodeToggle = function(enabled)
-        Config.patchOptions.firemodes = enabled
-        Weapons.patchWeapons(Services.ReplicatedStorage, Config.patchOptions)
-        saveConfig()
+    onTracerToggle = function(enabled)
+        Config.showTracer = enabled
+        ESP.refreshAll(NPCManager, Config)
     end,
     onVisibilityToggle = function()
         toggleGUIVisibility()
@@ -131,7 +116,6 @@ local callbacks = {
         disconnectRuntime()
         ESP.cleanup()
         HitboxAim.cleanup()
-        Lighting:restoreOriginal(Services.Lighting)
         Config.guiVisible = false
         saveConfig()
         forceMouseLock()
@@ -146,9 +130,6 @@ syncMouseState()
 NPCManager:scanWorkspace(Services.Workspace, ESP, Config)
 NPCManager:setupListener(Services.Workspace, ESP, Config)
 if Config.espEnabled then ESP.enable(NPCManager, Config) end
-if Config.patchOptions.recoil or Config.patchOptions.firemodes then
-    Weapons.patchWeapons(Services.ReplicatedStorage, Config.patchOptions)
-end
 
 local npcRefreshTimer = 0
 local espColorTimer = 0
@@ -157,7 +138,6 @@ table.insert(runtimeConnections, Services.RunService.Heartbeat:Connect(function(
     if Config.isUnloaded then return end
 
     if Config.guiVisible then syncMouseState() end
-    Lighting:update(Services.Lighting, Config)
 
     npcRefreshTimer = npcRefreshTimer + dt
     if npcRefreshTimer >= Config.NPC_REFRESH_INTERVAL then
@@ -171,7 +151,7 @@ table.insert(runtimeConnections, Services.RunService.Heartbeat:Connect(function(
         espColorTimer = 0
     end
 
-    -- Aimbot
+    -- Aimbot (Hitbox expander)
     if Config.aimEnabled and HitboxAim.holdingRightClick then
         local target = HitboxAim:getClosestValidTarget(NPCManager, Services.Workspace.CurrentCamera, Config)
         if target then
