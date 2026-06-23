@@ -12,12 +12,12 @@ function GUI:init(Services, Config, callbacks)
     screenGui.IgnoreGuiInset = true
 
     mainFrame = Instance.new("Frame")
-    mainFrame.Size = UDim2.new(0, 380, 0, 700)
+    mainFrame.Size = UDim2.new(0, 380, 0, 520)  -- smaller, fewer options
     mainFrame.Position = UDim2.new(1, -400, 0, 30)
     mainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
     mainFrame.BorderSizePixel = 0
     mainFrame.Active = true
-    mainFrame.Draggable = true  -- title bar will override drag
+    mainFrame.Draggable = true
     mainFrame.Parent = screenGui
     Instance.new("UICorner", mainFrame).CornerRadius = UDim.new(0, 10)
 
@@ -27,19 +27,17 @@ function GUI:init(Services, Config, callbacks)
     glow.Position = UDim2.new(0, -3, 0, -3)
     glow.BackgroundColor3 = Color3.fromRGB(255, 80, 30)
     glow.BackgroundTransparency = 0.5
-    glow.BorderSizePixel = 0
     glow.Parent = mainFrame
     Instance.new("UICorner", glow).CornerRadius = UDim.new(0, 12)
 
     local titleBar = Instance.new("Frame")
     titleBar.Size = UDim2.new(1, 0, 0, 50)
     titleBar.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
-    titleBar.BorderSizePixel = 0
     titleBar.Active = true
     titleBar.Parent = mainFrame
     Instance.new("UICorner", titleBar).CornerRadius = UDim.new(0, 10)
 
-    -- drag
+    -- Drag logic
     local dragging, dragStart, startPos
     titleBar.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 then
@@ -178,7 +176,7 @@ function GUI:init(Services, Config, callbacks)
         Instance.new("UICorner", track).CornerRadius = UDim.new(0, 4)
 
         local fill = Instance.new("Frame")
-        fill.Size = UDim2.new((cur-min)/(max-min), 0, 1, 0)
+        fill.Size = UDim2.new((cur - min) / (max - min), 0, 1, 0)
         fill.BackgroundColor3 = Color3.fromRGB(255, 100, 30)
         fill.Parent = track
         Instance.new("UICorner", fill).CornerRadius = UDim.new(0, 4)
@@ -186,14 +184,14 @@ function GUI:init(Services, Config, callbacks)
         local knob = Instance.new("TextButton")
         knob.Size = UDim2.new(0, 22, 0, 22)
         knob.AnchorPoint = Vector2.new(0.5, 0.5)
-        knob.Position = UDim2.new((cur-min)/(max-min), 0, 0.5, 0)
+        knob.Position = UDim2.new((cur - min) / (max - min), 0, 0.5, 0)
         knob.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
         knob.Text = ""
         knob.Parent = track
         Instance.new("UICorner", knob).CornerRadius = UDim.new(0, 11)
 
         local function update(v)
-            local p = (v-min)/(max-min)
+            local p = (v - min) / (max - min)
             fill.Size = UDim2.new(p, 0, 1, 0)
             knob.Position = UDim2.new(p, 0, 0.5, 0)
             label.Text = text .. ": " .. string.format("%.1f", v)
@@ -205,7 +203,7 @@ function GUI:init(Services, Config, callbacks)
             Services.UserInputService.InputChanged:Connect(function(input)
                 if input.UserInputType == Enum.UserInputType.MouseMovement and dragging then
                     local relX = math.clamp(input.Position.X - track.AbsolutePosition.X, 0, track.AbsoluteSize.X)
-                    local val = min + (relX / track.AbsoluteSize.X) * (max-min)
+                    local val = min + (relX / track.AbsoluteSize.X) * (max - min)
                     val = math.clamp(math.round(val * 10) / 10, min, max)
                     update(val)
                     callback(val)
@@ -218,7 +216,7 @@ function GUI:init(Services, Config, callbacks)
         track.InputBegan:Connect(function(input)
             if input.UserInputType == Enum.UserInputType.MouseButton1 and not dragging then
                 local relX = math.clamp(input.Position.X - track.AbsolutePosition.X, 0, track.AbsoluteSize.X)
-                local val = min + (relX / track.AbsoluteSize.X) * (max-min)
+                local val = min + (relX / track.AbsoluteSize.X) * (max - min)
                 val = math.clamp(math.round(val * 10) / 10, min, max)
                 update(val)
                 callback(val)
@@ -228,12 +226,12 @@ function GUI:init(Services, Config, callbacks)
     end
 
     local y = 10
-    y = addSection("🎯 AIMBOT (NPCs)", y)
+    y = addSection("🎯 AIMBOT", y)
     y = addToggle(y, "Aimbot", Config.aimEnabled, callbacks.onAimToggle)
     y = addToggle(y, "Silent Aim", Config.silentAim, callbacks.onSilentAimToggle)
     y = addToggle(y, "Lock Target", Config.lockTarget, callbacks.onLockTargetToggle)
     y = addToggle(y, "Hitbox Expander", Config.hitboxExpanderEnabled, callbacks.onHitboxToggle)
-    y = addSlider(y, "Expander Multiplier", 1.0, 3.0, Config.hitboxExpander, callbacks.onHitboxMultiplierChange)
+    y = addSlider(y, "Expander Size", 1.0, 3.0, Config.hitboxExpander, callbacks.onHitboxMultiplierChange)
     y = addSlider(y, "FOV Radius", 50, 1000, Config.fovRadius, callbacks.onFOVChange)
     y = addSlider(y, "Smoothness", 0.1, 1.0, Config.smoothing, callbacks.onSmoothingChange)
     y = addToggle(y, "Wall Check", Config.wallCheck, callbacks.onWallCheckToggle)
@@ -243,20 +241,8 @@ function GUI:init(Services, Config, callbacks)
     y = addToggle(y, "ESP Master", Config.espEnabled, callbacks.onESPToggle)
     y = addToggle(y, "Boxes", Config.showBox, callbacks.onBoxToggle)
     y = addToggle(y, "Tracers", Config.showTracer, callbacks.onTracerToggle)
-    y = addToggle(y, "Names", Config.showName, callbacks.onNameToggle)
-    y = addToggle(y, "Distance", Config.showDistance, callbacks.onDistanceToggle)
-    y = addToggle(y, "Health Bar", Config.showHealth, callbacks.onHealthToggle)
-    y = addToggle(y, "ESP Wall Check", Config.espWallCheck, callbacks.onESPWallCheckToggle)
-    y = addToggle(y, "Show Invisible", Config.showInvisible, callbacks.onShowInvisibleToggle)
-
-    y = y + 10
-    y = addSection("⚙ EXTRAS", y)
-    y = addToggle(y, "Fullbright", Config.fullBrightEnabled, callbacks.onFullBrightToggle)
-    y = addToggle(y, "No Recoil", Config.patchOptions.recoil, callbacks.onNoRecoilToggle)
-    y = addToggle(y, "Firemode Patch", Config.patchOptions.firemodes, callbacks.onFiremodeToggle)
 
     scroll.CanvasSize = UDim2.new(0, 0, 0, y + 30)
-
     self.visible = true
 end
 
